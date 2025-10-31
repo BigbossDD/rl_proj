@@ -20,4 +20,4 @@ env.close()
 #
 #first--> venv\Scripts\activate --it should givve --> (venv) C:\Users\USER\OneDrive\Desktop\PSUT\RL - Special Topic in DS (2)\MISC\code\rl_proj>
 #
-#then--> python src/envo/battle_zone_envo.py 
+#then--> python src/envo/battle_zone_envo.py cd 
