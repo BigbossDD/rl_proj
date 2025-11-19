@@ -7,27 +7,22 @@ PSUT
 ------------
 src
 │
-
-├── envo                     <- Environment setup, API testing, and helper utilities.
-│   ├── test_env.py          <- Confirms environment API (reset(), step(), spaces).
+├── envo                     
+│   ├── test_env.py          
 │   └── helper_classes
-│       └── replay_buffer.py <- Replay buffer implementation for DQN-based agents.
+│       └── replay_buffer.py 
 │
-
-├── models                   <- Agent classes for the reinforcement learning algorithms.
-│   ├── dqn_agent.py         <- Baseline Deep Q-Network (DQN) agent skeleton.
-│   ├── rainbowDQN_agent.py  <- Rainbow DQN agent skeleton (PER, N-step, etc.).
-│   └── ppo_agent.py         <- Proximal Policy Optimization (PPO) agent skeleton.
+├── models                   
+│   ├── dqn_agent.py         
+│   ├── rainbowDQN_agent.py  
+│   └── ppo_agent.py         
 │
-
-├── train                    <- Training scripts for each RL algorithm.
-│   ├── train_dqn.py         <- Training loop for the DQN baseline agent.
-│   ├── train_rainbowDQN.py  <- Training loop for the Rainbow DQN agent.
-│   └── train_ppo.py         <- Training loop for the PPO agent.
+├── train                    
+│   ├── train_dqn.py         
+│   ├── train_rainbowDQN.py  
+│   └── train_ppo.py         
 │
-
-└── main.py                  <- Central launcher that selects which agent to train
-                               (e.g., python main.py --algo dqn).
+└── main.py                         
 ------------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
