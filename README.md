@@ -22,7 +22,8 @@ src
 │   ├── train_rainbowDQN.py  
 │   └── train_ppo.py         
 │
-└── main.py                         
+└── main.py   
+                      
 ------------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
