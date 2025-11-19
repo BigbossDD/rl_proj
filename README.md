@@ -28,9 +28,6 @@ src
 
 └── main.py                  <- Central launcher that selects which agent to train
                                (e.g., python main.py --algo dqn).
-
-
-
---------
+------------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
