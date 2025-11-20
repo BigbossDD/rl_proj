@@ -5,6 +5,10 @@ from collections import deque
 
 class ReplayBuffer:
     def __init__(self, capacity, state_shape, device="cpu"):
+        '''
+        Buffer initialization
+        
+        '''
         self.capacity = capacity
         self.device = device
         # the buffer storage of experiences(state, action, reward, next_state, done)

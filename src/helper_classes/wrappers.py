@@ -1,6 +1,6 @@
 import gymnasium as gym
 from gymnasium.wrappers import AtariPreprocessing
-from gymnasium.wrappers import RescaleAction
+from gymnasium.wrappers import FrameStackObservation
 
 
 def make_atari_env(env_id="ALE/BattleZone-v5" , frame_stack=4):
@@ -30,6 +30,6 @@ def make_atari_env(env_id="ALE/BattleZone-v5" , frame_stack=4):
     )
     
    
-    env = RescaleAction(env, num_stack=frame_stack)
+    env = FrameStackObservation(env, num_stack=frame_stack)
 
     return env

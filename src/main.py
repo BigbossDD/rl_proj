@@ -3,25 +3,23 @@ from train import train_dqn
 from train import train_ppo
 from train import train_rainbowDQN
 
-def main():
+def call_train(agent_type, args):
+      '''
+      will call the training function for the 3 agents 
+      '''
+      pass
+  
+def plot(agent_type):
+        '''
+        plot training curves for all 3 agents
+        '''
+        pass
     
-    #parser = argparse.ArgumentParser(description="RL Training Launcher")
-    #parser.add_argument("--algo", type=str, required=True,
-   #                     choices=["dqn", "rainbow", "ppo"],
-   #                     help="Algorithm to train: dqn | rainbow | ppo")
-   # args = parser.parse_args()
-
-   # if args.algo == "dqn":
-    print("\n=== Training DQN ===\n")
-    train_dqn()
-
-    #elif args.algo == "rainbow":
-    #    print("\n=== Training Rainbow DQN ===\n")
-    #    train_rainbowDQN()
-
-    #elif args.algo == "ppo":
-    #    print("\n=== Training PPO ===\n")
-    #    train_ppo()
+def main():
+    '''
+    Main function to parse arguments and call training or plotting functions.
+    '''
+  
 
 if __name__ == "__main__":
     main()
