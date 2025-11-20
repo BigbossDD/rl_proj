@@ -11,6 +11,7 @@ class ReplayBuffer:
         '''
         self.capacity = capacity
         self.device = device
+        
         # the buffer storage of experiences(state, action, reward, next_state, done)
         self.states = np.zeros((capacity, *state_shape), dtype=np.uint8)
         self.next_states = np.zeros((capacity, *state_shape), dtype=np.uint8)

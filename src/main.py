@@ -16,8 +16,11 @@ def plot(agent_type):
         pass
     
 def main():
+    
+    
     '''
     Main function to parse arguments and call training or plotting functions.
+
     '''
   
 
