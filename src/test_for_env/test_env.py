@@ -13,8 +13,8 @@ obs, info = env.reset()
 #    if terminated or truncated:
         
 #        observation, info = env.reset()
-print("Space : " , env.observation_space)#-->Space :  Box(0, 255, (210, 160, 3), uint8)
-print("actions : ",env.action_space)#-->actions :  Discrete(18)
+print("Space(env.observation_space) : " , env.observation_space)#-->Space :  Box(0, 255, (210, 160, 3), uint8)
+print("actions(env.action_space) : ",env.action_space)#-->actions :  Discrete(18)
 env.step(1) 
 env.close()
 
