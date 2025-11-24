@@ -22,6 +22,10 @@ def main():
     Main function to parse arguments and call training or plotting functions.
 
     '''
+    #the 
+    print("Starting training...") 
+    
+    print("Skeleton main.py finished")
   
 
 if __name__ == "__main__":
