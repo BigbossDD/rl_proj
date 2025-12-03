@@ -9,6 +9,9 @@ from helper_classes.wrappers import make_atari_env
 
 
 def train_dqn(
+    '''
+an example of what a will go to the agent as parameters (we will change them later )
+    '''
     env_id="ALE/BattleZone-v5",
     num_episodes=5000,
     replay_size=100_000,
