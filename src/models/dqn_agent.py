@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 #for intalling the tourch pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-# note it uses cuda 11.8 ,so i have nvidia hardware that supports cuda 
+# note it uses cuda 11.8 ,so i have nvidia hardware that supports cuda , to whoever wants to use the code check your hardware
 
 
 class DQN(nn.Module):
