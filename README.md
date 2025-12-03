@@ -10,23 +10,28 @@ PSUT
     ├── src                <- Source code for use in this project.
     │   ├── __init__.py    <- Makes src a Python module
     │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
+    │   ├── helper_classes           
+    │   │   └── rerplay_buffer.py│   
+    │   │   └── wrappers.py
     │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
+    │   ├── train       <- Scripts to trin our agents 
+    │   │   └── train_dqn.py
+    │   │   └── train_ppo.py
+    │   │   └── train_rainbowDQN.py
     │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
+    │   ├── models         <-  our agents 
+    │   │   │                 
+    │   │   ├── dqn_agent.py
+    │   │   ├── ppo_agent.py
+    │   │   └── rainbowDQN_agent.py
     │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
+    │   └── test_for_env  <- Scripts to check that the envo is working 
+    │       └── test_env.py
+    ├── main.py    <- here where we connect all the components of the project
     │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+    └── 
 
 
 --------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+<p><small> I used this as a structure -->Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
