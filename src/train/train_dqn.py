@@ -6,7 +6,7 @@ from collections import deque
 from helper_classes.replay_buffer import ReplayBuffer
 from models.dqn_agent import DQN_Agent
 from helper_classes.wrappers import make_atari_env
-x = None
+
 
 def train_dqn(
     
@@ -15,14 +15,14 @@ def train_dqn(
     
     
     env_id="ALE/BattleZone-v5",
-    num_episodes=x,
-    replay_size=x,
-    batch_size=x,
-    start_learning=x,
-    train_freq=x,
-    target_update_freq=x,
-    gamma=x,
-    lr=x,
+    num_episodes=None,
+    replay_size=None,
+    batch_size=None,
+    start_learning=None,
+    train_freq=None,
+    target_update_freq=None,
+    gamma=None,
+    lr=None,
     device="cuda"
 ):
     '''

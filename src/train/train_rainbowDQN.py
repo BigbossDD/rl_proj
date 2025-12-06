@@ -15,7 +15,16 @@ def train_rainbow_dqn(
     save_path="models/rainbow_dqn_battlezone.pth"
 ):
 #raining of rainbow DQN agent 
+    '''
+    Train the Rainbow DQN agent using the specified hyperparameters
+    Args:
+        env_id (str): Atari environment ID
+        total_episodes (int): Total number of episodes to train
+        max_steps (int): Maximum steps per episode
+        batch_size (int): Batch size for training
+        save_path (str): Path to save the trained model
   
+    '''
     pass
    
 
