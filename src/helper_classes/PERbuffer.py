@@ -4,21 +4,17 @@ import torch
 
 #in this PER buffer , we will implement a Prioritized Experience Replay (PER) buffer without using a SumTree
 # as to test and measure if it will take a long time as what people usually think of when not using a SumTree 
-#
+#we using a simple numpy array to store priorities and sample from it using numpy functions
 
 class PERBuffer:
     def __init__(self, capacity=100000, alpha=0.6, beta=0.4, device="cpu"):
         """
-        Prioritized Experience Replay (PER) buffer.
-        - Stores transitions: (state, action, reward, next_state, done)
-        - Maintains priorities for sampling important transitions more often
-        - Does NOT use a SumTree. Uses simple array-based sampling.
-
-        Args:
-            capacity : max number of transitions
-            alpha    : how much prioritization is used (0 = uniform replay)
-            beta     : importance-sampling correction factor
-            device   : torch device for returning batches
+        
+        Args --> 
+            capacity --> max number of transitions
+            alpha    --> how much prioritization is used (0 = uniform replay)
+            beta     --> importance-sampling correction factor
+            device   -->device for returning batches , for us we using cuda 
         """
 
         self.capacity = capacity
@@ -47,64 +43,22 @@ class PERBuffer:
     # ----------------------------------------------------------------------
     def add(self, state, action, reward, next_state, done):
         """
-        Add one experience to the buffer.
+        Add one experience to the buffer , acounting fot priorities , and overwriting old data if full
 
-        Steps:
-        1. Store transition in the ring buffer (overwrites oldest data)
-        2. Assign priority = max_priority (new samples should be sampled at least once)
+        returns --> Nothing
         """
 
-        # Save transition data
-        self.states[self.ptr] = state
-        self.next_states[self.ptr] = next_state
-        self.actions[self.ptr] = action
-        self.rewards[self.ptr] = reward
-        self.dones[self.ptr] = done
-
-        # Assign maximum priority to new element
-        # ensures new experiences are sampled at least once
-        max_prio = self.priorities.max() if self.size > 0 else 1.0
-        self.priorities[self.ptr] = max_prio
-
-        # Move pointer forward
-        self.ptr = (self.ptr + 1) % self.capacity
-        self.size = min(self.size + 1, self.capacity)
-
-
+        pass
     # ----------------------------------------------------------------------
     def sample(self, batch_size):
         """
-        Sample a batch according to priorities.
-
-        Steps:
-        1. Convert priorities → probabilities (p_i = prio^alpha)
-        2. Multinomial sample indices according to probabilities
-        3. Compute importance-sampling weights
-        4. Return tensors for training
+        Sample a batch according to priorities 
+  
+        return -->  states, actions, rewards, next_states, dones, indices, weights
         """
 
-        # Compute sampling probabilities
-        # Raise priorities to α (controls level of prioritization)
-        scaled_prios = self.priorities[:self.size] ** self.alpha
-        prob = scaled_prios / scaled_prios.sum()
-
-        # Sample indices according to probability distribution
-        indices = np.random.choice(self.size, batch_size, p=prob, replace=False)
-
-        # Importance sampling weights:
-        # Corrects the bias introduced by non-uniform sampling
-        weights = (self.size * prob[indices]) ** (-self.beta)
-        weights = weights / weights.max()  # Normalize for stability
-
-        # Convert everything into torch tensors
-        states = torch.tensor(self.states[indices], device=self.device, dtype=torch.float32) / 255.0
-        next_states = torch.tensor(self.next_states[indices], device=self.device, dtype=torch.float32) / 255.0
-        actions = torch.tensor(self.actions[indices], device=self.device)
-        rewards = torch.tensor(self.rewards[indices], device=self.device)
-        dones = torch.tensor(self.dones[indices], device=self.device, dtype=torch.float32)
-        weights = torch.tensor(weights, device=self.device, dtype=torch.float32)
-
-        return states, actions, rewards, next_states, dones, indices, weights
+        pass
+        
 
 
     # ----------------------------------------------------------------------
@@ -117,12 +71,10 @@ class PERBuffer:
         Args:
             indices        : transitions that were sampled in the batch
             new_priorities : TD-error or loss per transition
+            
+            returns--> Nothing
         """
-        new_priorities = new_priorities.squeeze().detach().cpu().numpy()
-
-        # Add small epsilon to avoid zero priorities
-        self.priorities[indices] = new_priorities + self.epsilon
-
+        pass
 
     # ----------------------------------------------------------------------
     def __len__(self):
