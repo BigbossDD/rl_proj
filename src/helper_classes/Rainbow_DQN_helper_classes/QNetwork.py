@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from noisy_linear import NoisyLinear  
+from src.helper_classes.Rainbow_DQN_helper_classes.noisy_linear import NoisyLinear  
 
    # This  Q-Network Combines --> 
    # 1. Noisy Linear Layers (Exploration)
