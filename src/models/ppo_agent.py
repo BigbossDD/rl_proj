@@ -1,40 +1,38 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import numpy as np
-from collections import deque
+import torch.nn.functional as F
 
-
-class PPOActorCritic(nn.Module):
-    """Shared CNN feature extractor + separate actor & critic heads."""
-
-    def __init__(self, action_size):
+class PPO_PolicyNet(nn.Module):
+    def __init__(self, input_shape, num_actions):
         super().__init__()
+        c, h, w = input_shape
 
-        # CNN feature extractor (Atari-standard)
-        self.feature_net = nn.Sequential(
-            nn.Conv2d(4, 32, 8, stride=4), nn.ReLU(),
+        self.conv = nn.Sequential(
+            nn.Conv2d(c, 32, 8, stride=4), nn.ReLU(),
             nn.Conv2d(32, 64, 4, stride=2), nn.ReLU(),
             nn.Conv2d(64, 64, 3, stride=1), nn.ReLU(),
-            nn.Flatten(),
+            nn.Flatten()
         )
 
-        # Compute final feature size
-        
+        with torch.no_grad():
+            dummy = torch.zeros(1, c, h, w)
+            conv_out_size = self.conv(dummy).shape[1]
 
+        self.fc_actor = nn.Sequential(
+            nn.Linear(conv_out_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
+        )
 
-class PPOAgent:
-   def __init__(
-        self,
-        state_shape,
-        action_size,
-        lr=2.5e-4,
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_eps=0.1,
-        epochs=4,
-        batch_size=128,
-        steps_per_update=2048
-    ):
-        
-    pass
+        self.fc_critic = nn.Sequential(
+            nn.Linear(conv_out_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1)
+        )
+
+    def forward(self, x):
+        x = x / 255.0  # normalize frames if input is images
+        features = self.conv(x)
+        actor_logits = self.fc_actor(features)
+        value = self.fc_critic(features).squeeze(-1)  # shape: [batch]
+        return actor_logits, value

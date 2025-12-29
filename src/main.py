@@ -1,6 +1,6 @@
 import argparse
 from train.train_rainbowDQN import train_rainbowDQN
-#from src.train.train_ppo import train_ppo
+from train.train_ppo import train_PPO
 from train.train_dqn import train_dqn
 import matplotlib.pyplot as plt
 
@@ -23,8 +23,20 @@ def call_train(agent_type, args):
             device=args.device
         )
 
-    #elif agent_type == "PPO":
-     #   train_ppo(args)
+    elif agent_type == "PPO":
+        stats = train_PPO(
+            env_id=args.env_id,
+            num_episodes=args.num_episodes,
+            rollout_length=args.rollout_length,
+            batch_size=args.batch_size,
+            mini_batch_size=args.mini_batch_size,
+            epochs=args.epochs,
+            gamma=args.gamma,
+            lam=args.lam,
+            clip_epsilon=args.clip_epsilon,
+            lr=args.lr,
+            device=args.device
+        )
 
     elif agent_type == "RAINBOW":
         stats = train_rainbowDQN(
@@ -99,13 +111,13 @@ def main():
     parser = argparse.ArgumentParser(description="Train RL agents on Atari")
 
     # ==== general ====
-    parser.add_argument("--agent", type=str, default="RAINBOW",
+    parser.add_argument("--agent", type=str, default="PPO",
                         choices=["DQN", "PPO", "RAINBOW"])
     parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
     parser.add_argument("--device", type=str, default="cuda")
 
     # ==== DQN hyperparameters ====
-    parser.add_argument("--num_episodes", type=int, default=500)
+    parser.add_argument("--num_episodes", type=int, default=10000)
     parser.add_argument("--replay_size", type=int, default=100_000)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--start_learning", type=int, default=10_000)
