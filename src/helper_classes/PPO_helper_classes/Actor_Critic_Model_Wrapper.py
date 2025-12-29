@@ -1,3 +1,8 @@
+import torch
+import torch.nn.functional as F
+from torch.distributions import Categorical
+
+
 class ActorCritic:
     """
     Wraps the PPO neural network and provides:
@@ -13,7 +18,8 @@ class ActorCritic:
                     actor_logits, value
             device (str): "cpu" or "cuda"
         """
-        pass
+        self.model = model.to(device)
+        self.device = device
 
     def forward(self, state):
         """
@@ -24,7 +30,9 @@ class ActorCritic:
             actor_logits (torch.Tensor)
             value (torch.Tensor)
         """
-        pass
+        state = state.to(self.device)
+        actor_logits, value = self.model(state)
+        return actor_logits, value
 
     def act(self, state):
         """
@@ -34,11 +42,26 @@ class ActorCritic:
             state (torch.Tensor): single state
 
         Returns:
-            action (int or np.ndarray)
+            action (int)
             log_prob (float)
             value (float)
         """
-        pass
+        if not torch.is_tensor(state):
+            state = torch.tensor(state, dtype=torch.float32)
+
+        state = state.unsqueeze(0).to(self.device)
+
+        with torch.no_grad():
+            logits, value = self.forward(state)
+            dist = Categorical(logits=logits)
+            action = dist.sample()
+            log_prob = dist.log_prob(action)
+
+        return (
+            action.item(),
+            log_prob.item(),
+            value.squeeze(0).item()
+        )
 
     def evaluate(self, states, actions):
         """
@@ -53,4 +76,13 @@ class ActorCritic:
             entropy (torch.Tensor)
             values (torch.Tensor)
         """
-        pass
+        states = states.to(self.device)
+        actions = actions.to(self.device)
+
+        logits, values = self.forward(states)
+        dist = Categorical(logits=logits)
+
+        log_probs = dist.log_prob(actions)
+        entropy = dist.entropy()
+
+        return log_probs, entropy, values.squeeze(-1)

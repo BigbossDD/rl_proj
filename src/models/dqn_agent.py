@@ -1,104 +1,139 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import random
 import numpy as np
-
-#for intalling the tourch pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-# note it uses cuda 11.8 ,so i have nvidia hardware that supports cuda , to whoever wants to use the code check your hardware
+import random
 
 
+############################################
+# DQN NETWORK (Atari-style CNN)
+############################################
 class DQN(nn.Module):
     def __init__(self, input_shape, num_actions):
-        '''
-        
-        DQN Network initialization
-        
-        
-        '''
-        pass
+        super(DQN, self).__init__()
+
+        c, h, w = input_shape  # (4, 84, 84)
+
+        self.conv = nn.Sequential(
+            nn.Conv2d(c, 32, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+
+        # Compute conv output size dynamically
+        with torch.no_grad():
+            dummy = torch.zeros(1, c, h, w)
+            conv_out_size = self.conv(dummy).view(1, -1).size(1)
+
+        self.fc = nn.Sequential(
+            nn.Linear(conv_out_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
+        )
 
     def forward(self, x):
-        '''
-        Forward pass of the network.
-        returns--> Q-values for each action
-        
-        '''
-        pass
+        x = x / 255.0                # normalize Atari frames
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        return self.fc(x)
 
 
-######################################################################
+############################################
+# DQN AGENT
+############################################
 class DQN_Agent:
-    def __init__(self,input_shape,num_actions,lr=1e-4,gamma=0.99,device="cuda"):
-        '''
-        DQN_Agent initialization
-        '''
-        pass
-######################################################################
-    def select_action(self, state, epsilon):
-        '''
-        Select an action using epsilon-greedy policy 
-        returns--> action 
-        
-        '''
-        pass
-    def remember(self, state, action, reward, next_state, done):
-        '''
-        Store experience in replay buffer
-        
-        '''
-        pass
-    def learn_from_replay(self):
-        '''
-        uses replay buffer and perform a training step
-        
-        '''
-        pass
-    def update_epsilon(self):
-        '''
-        Update epsilon for epsilon-greedy policy
-        
-        
-        '''
-        pass
-    
+    def __init__(
+        self,
+        input_shape,
+        num_actions,
+        replay_buffer,
+        lr=1e-4,
+        gamma=0.99,
+        batch_size=64,
+        target_update_freq=1000,
+        device="cuda"
+    ):
+        self.device = device
+        self.num_actions = num_actions
+        self.gamma = gamma
+        self.batch_size = batch_size
+        self.target_update_freq = target_update_freq
 
-   
-######################################################################
-    def train_step(self, batch):
-        states = torch.tensor(batch["states"], dtype=torch.float32, device=self.device)
-        actions = torch.tensor(batch["actions"], dtype=torch.int64, device=self.device)
-        rewards = torch.tensor(batch["rewards"], dtype=torch.float32, device=self.device)
-        next_states = torch.tensor(batch["next_states"], dtype=torch.float32, device=self.device)
-        dones = torch.tensor(batch["dones"], dtype=torch.float32, device=self.device)
+        self.policy_net = DQN(input_shape, num_actions).to(device)
+        self.target_net = DQN(input_shape, num_actions).to(device)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.eval()
 
-       
-    '''
-    it will perform a single training step using a batch of experiences from the replay buffer
-    
-    then it will calculate the predicted Q-value for the current states q_pred = Q(s,a)
-    and the target Q-values using the Bellman equation q_target = r + y * max Q'
-    
-    returns--> the loss 
-    
-    '''
- ######################################################################   
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=lr)
+
+        self.replay_buffer = replay_buffer
+
+        self.epsilon = 1.0
+        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.01
+
+        self.step_count = 0
+
+    ########################################
+    def select_action(self, state):
+        if random.random() < self.epsilon:
+            return random.randrange(self.num_actions)
+
+        state = torch.tensor(
+            state, dtype=torch.float32, device=self.device
+        ).unsqueeze(0)
+
+        with torch.no_grad():
+            q_values = self.policy_net(state)
+        return q_values.argmax(1).item()
+
+    ########################################
+    def train_step(self):
+        if len(self.replay_buffer) < self.batch_size:
+            return
+
+        batch = self.replay_buffer.sample(self.batch_size)
+
+        states = torch.tensor(batch["states"], device=self.device)
+        actions = torch.tensor(batch["actions"], device=self.device).unsqueeze(1)
+        rewards = torch.tensor(batch["rewards"], device=self.device)
+        next_states = torch.tensor(batch["next_states"], device=self.device)
+        dones = torch.tensor(batch["dones"], device=self.device)
+
+        # Q(s, a)
+        q_values = self.policy_net(states).gather(1, actions).squeeze(1)
+
+        # max Q'(s')
+        with torch.no_grad():
+            next_q_values = self.target_net(next_states).max(1)[0]
+            targets = rewards + self.gamma * (1 - dones) * next_q_values
+
+        loss = nn.functional.mse_loss(q_values, targets)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Target network update
+        self.step_count += 1
+        if self.step_count % self.target_update_freq == 0:
+            self.update_target()
+
+        # Epsilon decay
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+    ########################################
     def update_target(self):
-        ''' 
-        Update target network by copying weights of policy network. 
-        
-        '''""
-        pass
-########################################################################
-def save_model(self, filepath):
-        """
-        Saves the main model's weights to a file.
-        """
-        pass
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
-def load_model(self, filepath):
-        """
-        Loads model weights from a file into the main model.
-        """
-        pass
-        
+    ########################################
+    def save_model(self, filepath):
+        torch.save(self.policy_net.state_dict(), filepath)
+
+    def load_model(self, filepath):
+        self.policy_net.load_state_dict(torch.load(filepath))
+        self.policy_net.to(self.device)

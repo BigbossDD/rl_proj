@@ -21,6 +21,7 @@ class ReplayBuffer:
 
         self.ptr = 0
         self.size = 0
+        
 ######################################################################
     def push(self, state, action, reward, next_state, done):
         """
@@ -28,7 +29,16 @@ class ReplayBuffer:
         will add a new exprince  into the buffer.
         
         """
-        pass
+        self.states[self.ptr] = state
+        self.next_states[self.ptr] = next_state
+        self.actions[self.ptr] = action
+        self.rewards[self.ptr] = reward
+        self.dones[self.ptr] = done
+        self.ptr = (self.ptr + 1) % self.capacity
+        if self.size < self.capacity:
+            self.size += 1
+            
+        
 ######################################################################
     def sample(self, batch_size):
         """
@@ -37,9 +47,20 @@ class ReplayBuffer:
         returns: states, actions, rewards, next_states, dones
         
         """
-        pass
+        idxs = np.random.choice(self.size, batch_size, replace=False)
+        batch = {
+            "states": self.states[idxs],
+            "actions": self.actions[idxs],
+            "rewards": self.rewards[idxs],
+            "next_states": self.next_states[idxs],
+            "dones": self.dones[idxs]
+        }   
+        return batch
+        
 ######################################################################
     def __len__(self):
-        
+        """
+        Returns the current size of the buffer.
+        """
         
         return self.size
