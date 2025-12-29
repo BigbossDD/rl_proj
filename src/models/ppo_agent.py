@@ -31,8 +31,11 @@ class PPO_PolicyNet(nn.Module):
         )
 
     def forward(self, x):
-        x = x / 255.0  # normalize frames if input is images
+        # Ensure input has batch dimension
+        if len(x.shape) == 3:
+            x = x.unsqueeze(0)
+        x = x / 255.0
         features = self.conv(x)
         actor_logits = self.fc_actor(features)
-        value = self.fc_critic(features).squeeze(-1)  # shape: [batch]
+        value = self.fc_critic(features).squeeze(-1)
         return actor_logits, value

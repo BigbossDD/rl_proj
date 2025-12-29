@@ -88,18 +88,20 @@ class RolloutBuffer:
         values = torch.tensor(self.values[:self.ptr], device=self.device)
         advantages = torch.tensor(self.advantages[:self.ptr], device=self.device)
         returns = torch.tensor(self.returns[:self.ptr], device=self.device)
-
         for batch in minibatch_generator(
-            batch_size=self.ptr,
-            mini_batch_size=batch_size,
-            states=states,
-            actions=actions,
-            log_probs=log_probs,
-            values=values,
-            advantages=advantages,
-            returns=returns
+            self.ptr,
+            batch_size,
+            states,
+            actions,
+            log_probs,
+            values,
+            advantages,
+            returns
         ):
             yield batch
+
+        
+       
 
     # ------------------------------------------------------------------
     def clear(self):

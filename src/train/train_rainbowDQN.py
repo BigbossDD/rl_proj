@@ -1,116 +1,22 @@
 import numpy as np
 import torch
-import torch.optim as optim
 import gymnasium as gym
-from collections import defaultdict
-from helper_classes.Rainbow_DQN_helper_classes.PERbuffer import PERBuffer
-from helper_classes.Rainbow_DQN_helper_classes.QNetwork import QNetwork
-from helper_classes.Rainbow_DQN_helper_classes.noisy_linear import NoisyLinear
-# helper classes (already implemented by you)
-# from helpers.noisy_linear import NoisyLinear
-# from helpers.per_buffer import PERBuffer
-# from helpers.q_network import QNetwork
+import cv2
+import os
+from collections import deque, defaultdict
+from models.rainbowDQN_agent import RainbowDQNAgent
+
+# ======================================================
+# Frame preprocessing
+# ======================================================
+def preprocess_frame(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    resized = cv2.resize(gray, (84, 84), interpolation=cv2.INTER_AREA)
+    return resized.astype(np.uint8)
 
 
 # ======================================================
-# Rainbow DQN Agent (LOGIC ONLY)
-# ======================================================
-class RainbowDQNAgent:
-    def __init__(
-        self,
-        obs_shape,
-        n_actions,
-        gamma,
-        lr,
-        device,
-        replay_size,
-        batch_size,
-        target_update_freq,
-        alpha=0.6,
-        beta_start=0.4,
-        beta_frames=1_000_000,
-    ):
-        self.device = device
-        self.gamma = gamma
-        self.batch_size = batch_size
-        self.target_update_freq = target_update_freq
-
-        self.q_net = QNetwork(obs_shape, n_actions).to(device)
-        self.target_q_net = QNetwork(obs_shape, n_actions).to(device)
-        self.target_q_net.load_state_dict(self.q_net.state_dict())
-        self.target_q_net.eval()
-
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr=lr)
-
-        self.replay_buffer = PERBuffer(replay_size, alpha)
-
-        self.beta_start = beta_start
-        self.beta_frames = beta_frames
-        self.frame_idx = 0
-
-        self.n_actions = n_actions
-
-    def select_action(self, state):
-        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-        with torch.no_grad():
-            q_vals = self.q_net(state)
-        return q_vals.argmax(dim=1).item()
-
-    def store(self, s, a, r, s_next, done):
-        self.replay_buffer.add(s, a, r, s_next, done)
-
-    def _beta(self):
-        return min(
-            1.0,
-            self.beta_start + self.frame_idx * (1.0 - self.beta_start) / self.beta_frames
-        )
-
-    def learn(self):
-        if len(self.replay_buffer) < self.batch_size:
-            return None
-
-        self.frame_idx += 1
-        beta = self._beta()
-
-        s, a, r, s_next, d, idxs, w = self.replay_buffer.sample(
-            self.batch_size, beta
-        )
-
-        s = torch.tensor(s, dtype=torch.float32, device=self.device)
-        s_next = torch.tensor(s_next, dtype=torch.float32, device=self.device)
-        a = torch.tensor(a, dtype=torch.long, device=self.device)
-        r = torch.tensor(r, dtype=torch.float32, device=self.device)
-        d = torch.tensor(d, dtype=torch.float32, device=self.device)
-        w = torch.tensor(w, dtype=torch.float32, device=self.device)
-
-        q = self.q_net(s).gather(1, a.unsqueeze(1)).squeeze(1)
-
-        with torch.no_grad():
-            a_next = self.q_net(s_next).argmax(1)
-            q_next = self.target_q_net(s_next).gather(
-                1, a_next.unsqueeze(1)
-            ).squeeze(1)
-            target = r + self.gamma * q_next * (1 - d)
-
-        td_error = target - q
-        loss = (w * td_error.pow(2)).mean()
-
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        self.replay_buffer.update_priorities(
-            idxs, td_error.abs().detach().cpu().numpy()
-        )
-
-        return loss.item()
-
-    def update_target(self):
-        self.target_q_net.load_state_dict(self.q_net.state_dict())
-
-
-# ======================================================
-# Training function (CALLED BY MAIN)
+# Training / Deployment Entry
 # ======================================================
 def train_rainbowDQN(
     env_id,
@@ -123,50 +29,135 @@ def train_rainbowDQN(
     gamma,
     lr,
     device,
+    mode="train"
 ):
-    env = gym.make(env_id)
-    obs_shape = env.observation_space.shape
+    """
+    mode:
+        - 'train'  : training without rendering
+        - 'deploy' : play using trained weights (rendered)
+    """
+
+    render_mode = "human" if mode == "deploy" else None
+    env = gym.make(env_id, render_mode=render_mode)
+
     n_actions = env.action_space.n
 
+    # ---- Agent ----
+    
+
     agent = RainbowDQNAgent(
-        obs_shape,
-        n_actions,
-        gamma,
-        lr,
-        device,
-        replay_size,
-        batch_size,
-        target_update_freq,
+        obs_shape=(4, 84, 84),
+        n_actions=n_actions,
+        gamma=gamma,
+        lr=lr,
+        device=device,
+        replay_size=replay_size,
+        batch_size=batch_size,
+        target_update_freq=target_update_freq,
     )
 
+    WEIGHT_FILE = "rainbow_weights.pt"
+    REWARD_FILE = "rainbow_rewards.npy"
+
+    frame_stack = deque(maxlen=4)
+
+    # ======================================================
+    # DEPLOY MODE
+    # ======================================================
+    if mode == "deploy":
+        if not os.path.exists(WEIGHT_FILE):
+            print("[ERROR] No trained weights found.")
+            return None
+
+        agent.q_net.load_state_dict(
+            torch.load(WEIGHT_FILE, map_location=device)
+        )
+        agent.q_net.eval()
+
+        print("[INFO] Loaded trained Rainbow DQN")
+
+        for ep in range(5):
+            obs, _ = env.reset()
+            frame = preprocess_frame(obs)
+            frame_stack.clear()
+            for _ in range(4):
+                frame_stack.append(frame)
+
+            state = np.stack(frame_stack, axis=0)
+            done = False
+            ep_reward = 0
+
+            while not done:
+                action = agent.select_action(state)
+                obs, reward, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
+
+                frame_stack.append(preprocess_frame(obs))
+                state = np.stack(frame_stack, axis=0)
+
+                ep_reward += reward
+
+            print(f"[DEPLOY] Episode {ep+1} Reward: {ep_reward:.1f}")
+
+        env.close()
+        return None
+
+    # ======================================================
+    # TRAIN MODE
+    # ======================================================
     stats = defaultdict(list)
     global_step = 0
 
-    for ep in range(num_episodes):
-        state, _ = env.reset()
-        ep_reward = 0
-        done = False
+    try:
+        for ep in range(num_episodes):
+            obs, _ = env.reset()
+            frame = preprocess_frame(obs)
+            frame_stack.clear()
+            for _ in range(4):
+                frame_stack.append(frame)
 
-        while not done:
-            action = agent.select_action(state)
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
+            state = np.stack(frame_stack, axis=0)
+            done = False
+            ep_reward = 0
 
-            agent.store(state, action, reward, next_state, done)
-            state = next_state
-            ep_reward += reward
+            while not done:
+                action = agent.select_action(state)
 
-            if global_step > start_learning and global_step % train_freq == 0:
-                loss = agent.learn()
-                if loss is not None:
-                    stats["loss"].append(loss)
+                obs, reward, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
 
-            if global_step % target_update_freq == 0:
-                agent.update_target()
+                frame_stack.append(preprocess_frame(obs))
+                next_state = np.stack(frame_stack, axis=0)
 
-            global_step += 1
+                agent.store(state, action, reward, next_state, done)
 
-        stats["episode_rewards"].append(ep_reward)
+                if global_step > start_learning and global_step % train_freq == 0:
+                    loss = agent.learn()
+                    if loss is not None:
+                        stats["loss"].append(loss)
 
-    env.close()
+                if global_step % target_update_freq == 0:
+                    agent.update_target()
+
+                state = next_state
+                ep_reward += reward
+                global_step += 1
+
+            stats["episode_rewards"].append(ep_reward)
+            print(
+                f"Episode {ep+1}/{num_episodes} | "
+                f"Reward: {ep_reward:.1f}"
+            )
+
+    except KeyboardInterrupt:
+        print("\n[INFO] Training interrupted")
+
+    finally:
+        torch.save(agent.q_net.state_dict(), WEIGHT_FILE)
+        np.save(REWARD_FILE, np.array(stats["episode_rewards"]))
+        env.close()
+
+        print(f"[INFO] Weights saved to {WEIGHT_FILE}")
+        print(f"[INFO] Rewards saved to {REWARD_FILE}")
+
     return stats

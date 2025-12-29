@@ -1,4 +1,7 @@
+
 import argparse
+import os
+import numpy as np
 from train.train_rainbowDQN import train_rainbowDQN
 from train.train_ppo import train_PPO
 from train.train_dqn import train_dqn
@@ -8,8 +11,8 @@ def call_train(agent_type, args):
     '''
     Call the training function for the selected agent
     '''
-    
-    if agent_type == "DQN":
+    print(f"[INFO] Calling training for agent: {agent_type}")
+    if agent_type == "RAINBOW":#DQN
         stats = train_dqn(
             env_id=args.env_id,
             num_episodes=args.num_episodes,
@@ -20,25 +23,27 @@ def call_train(agent_type, args):
             target_update_freq=args.target_update_freq,
             gamma=args.gamma,
             lr=args.lr,
-            device=args.device
+            device=args.device,
+            mode=args.mode        # Pass mode for rendering / resume support
         )
 
-    elif agent_type == "PPO":
+    elif agent_type == "PPO":#PPO
         stats = train_PPO(
             env_id=args.env_id,
             num_episodes=args.num_episodes,
-            rollout_length=args.rollout_length,
+            rollout_length=getattr(args, "rollout_length", 2048),
             batch_size=args.batch_size,
-            mini_batch_size=args.mini_batch_size,
-            epochs=args.epochs,
+            mini_batch_size=getattr(args, "mini_batch_size", 32),
+            epochs=getattr(args, "epochs", 10),
             gamma=args.gamma,
-            lam=args.lam,
-            clip_epsilon=args.clip_epsilon,
+            lam=getattr(args, "lam", 0.95),
+            clip_epsilon=getattr(args, "clip_epsilon", 0.2),
             lr=args.lr,
-            device=args.device
+            device=args.device,
+            mode=args.mode
         )
 
-    elif agent_type == "RAINBOW":
+    elif agent_type == "DQN":#Rainbow DQN
         stats = train_rainbowDQN(
             env_id=args.env_id,
             num_episodes=args.num_episodes,
@@ -49,17 +54,17 @@ def call_train(agent_type, args):
             target_update_freq=args.target_update_freq,
             gamma=args.gamma,
             lr=args.lr,
-            device=args.device
+            device=args.device,
+            mode=args.mode
         )
 
-        
     else:
         raise ValueError(f"Unknown agent type: {agent_type}")
+
     return stats
 
-def plot(stats , window=100):
-    
 
+def plot(stats, window=50):
     rewards = stats["episode_rewards"]
     episodes = range(len(rewards))
 
@@ -110,14 +115,20 @@ def plot(stats , window=100):
 def main():
     parser = argparse.ArgumentParser(description="Train RL agents on Atari")
 
-    # ==== general ====
-    parser.add_argument("--agent", type=str, default="PPO",
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="deploy",
+        choices=["train", "resume", "deploy"],
+        help="train: start new, resume: continue training, deploy: run trained agent"
+    )
+
+    parser.add_argument("--agent", type=str, default="RAINBOW",
                         choices=["DQN", "PPO", "RAINBOW"])
     parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
     parser.add_argument("--device", type=str, default="cuda")
 
-    # ==== DQN hyperparameters ====
-    parser.add_argument("--num_episodes", type=int, default=10000)
+    parser.add_argument("--num_episodes", type=int, default=10)
     parser.add_argument("--replay_size", type=int, default=100_000)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--start_learning", type=int, default=10_000)
@@ -126,16 +137,35 @@ def main():
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--lr", type=float, default=1e-4)
 
+    # PPO-specific optional args
+    parser.add_argument("--rollout_length", type=int, default=2048)
+    parser.add_argument("--mini_batch_size", type=int, default=32)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--lam", type=float, default=0.95)
+    parser.add_argument("--clip_epsilon", type=float, default=0.2)
+
     args = parser.parse_args()
 
-    print(f"Starting training for agent: {args.agent}")
-    stats  = call_train(args.agent, args)
-    print("Training finished.")
-    
-    
-    if stats is not None:
-        print("Plotting training curves...")
-        plot(stats)
+    # Create results directory early
+    RESULT_DIR = "results"
+    os.makedirs(RESULT_DIR, exist_ok=True)
+    WEIGHT_FILE = os.path.join(RESULT_DIR, f"{args.agent.lower()}_weights.pth")
+    HISTORY_FILE = os.path.join(RESULT_DIR, f"{args.agent.lower()}_history.npy")
+
+    stats = None
+
+    if args.mode in ["train", "resume"]:
+        print(f"Starting {args.mode} for agent: {args.agent}")
+        stats = call_train(args.agent, args)
+
+        if stats is not None:
+            print("Plotting training curves...")
+            plot(stats)
+
+    elif args.mode == "deploy":
+        print(f"Deploying agent: {args.agent}")
+        # call_train with mode=deploy will handle loading weights and running agent visually
+        call_train(args.agent, args)
 
 if __name__ == "__main__":
     main()
