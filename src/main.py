@@ -121,7 +121,7 @@ def main():
     parser.add_argument(
         "--mode",
         type=str,
-        default="deploy",
+        default="resume",
         choices=["train", "resume", "deploy"],
         help="train: start new, resume: continue training, deploy: run trained agent"
     )
@@ -130,16 +130,19 @@ def main():
                         choices=["DQN", "PPO", "RAINBOW"])
     parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
     parser.add_argument("--device", type=str, default="cuda")
-
-    parser.add_argument("--num_episodes", type=int, default=10)
-    parser.add_argument("--replay_size", type=int, default=100_000)
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--start_learning", type=int, default=10_000)
-    parser.add_argument("--train_freq", type=int, default=4)
-    parser.add_argument("--target_update_freq", type=int, default=1000)
-    parser.add_argument("--gamma", type=float, default=0.99)
-    parser.add_argument("--lr", type=float, default=1e-4)
-
+    #------------------------
+    # change the default values below to set hyperparameters for each agent 
+    #as presented in the comments
+    
+    parser.add_argument("--num_episodes", type=int, default=10000)#for DQN --> 10000  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--replay_size", type=int, default=100_000)#for DQN --> 100_000  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--batch_size", type=int, default=32)#for DQN --> 32  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--start_learning", type=int, default=2_000)#for DQN --> 2000
+    parser.add_argument("--train_freq", type=int, default=4)#for DQN --> 4  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--target_update_freq", type=int, default=500)#for DQN --> 500 
+    parser.add_argument("--gamma", type=float, default=0.99)#for DQN -->  0.99 /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--lr", type=float, default=2.5e-4 )#for DQN --> 2.5e-4   /// Rainbow DQN -->  /// PPO -->
+    #------------------------
     # PPO-specific optional args
     parser.add_argument("--rollout_length", type=int, default=2048)
     parser.add_argument("--mini_batch_size", type=int, default=32)

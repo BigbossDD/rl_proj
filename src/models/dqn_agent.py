@@ -72,7 +72,11 @@ class DQN_Agent:
         self.replay_buffer = replay_buffer
 
         self.epsilon = 1.0
-        self.epsilon_decay = 0.995
+        #self.epsilon_decay = 0.995 --> we disable epsilon decay for better training stability
+        #added fixes 
+        
+        self.epsilon_decay_steps = 1_000_000  # Atari standard
+        self.total_steps = 0
         self.epsilon_min = 0.01
 
         self.step_count = 0
@@ -122,9 +126,17 @@ class DQN_Agent:
         if self.step_count % self.target_update_freq == 0:
             self.update_target()
 
-        # Epsilon decay
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        # Epsilon decay --> an old way of doing it, we switched to linear decay as this was cusing colapses in training
+        #if self.epsilon > self.epsilon_min:
+        #    self.epsilon *= self.epsilon_decay
+            
+        # Linear epsilon decay (step-based)
+        self.total_steps += 1
+        self.epsilon = max(
+            self.epsilon_min,
+            1.0 - self.total_steps / self.epsilon_decay_steps
+        )
+
 
     ########################################
     def update_target(self):
