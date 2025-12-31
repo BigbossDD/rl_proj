@@ -12,7 +12,7 @@ def call_train(agent_type, args):
     Call the training function for the selected agent
     '''
     print(f"[INFO] Calling training for agent: {agent_type}")
-    if agent_type == "RAINBOW":#DQN
+    if agent_type == "DQN":#DQN
         stats = train_dqn(
             env_id=args.env_id,
             num_episodes=args.num_episodes,
@@ -43,7 +43,7 @@ def call_train(agent_type, args):
             mode=args.mode
         )
 
-    elif agent_type == "DQN":#Rainbow DQN
+    elif agent_type == "RAINBOW":#Rainbow DQN
         stats = train_rainbowDQN(
             env_id=args.env_id,
             num_episodes=args.num_episodes,
@@ -123,7 +123,7 @@ def main():
         help="train: start new, resume: continue training, deploy: run trained agent"
     )
 
-    parser.add_argument("--agent", type=str, default="RAINBOW",
+    parser.add_argument("--agent", type=str, default="DQN",
                         choices=["DQN", "PPO", "RAINBOW"])
     parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
     parser.add_argument("--device", type=str, default="cuda")
