@@ -7,6 +7,9 @@ from train.train_ppo import train_PPO
 from train.train_dqn import train_dqn
 import matplotlib.pyplot as plt
 
+#to change the agent that is being trained, in launch.json change the arg --agent to either DQN, PPO or RAINBOW
+
+
 def call_train(agent_type, args):
     '''
     Call the training function for the selected agent
