@@ -152,7 +152,7 @@ def main():
     parser.add_argument(
         "--mode",
         type=str,
-        default="deploy",
+        default="train",
         choices=["train", "resume", "deploy"],
         help="train: start new, resume: continue training, deploy: run trained agent"
     )
@@ -205,7 +205,7 @@ def main():
         call_train(args.agent, args)
 
 if __name__ == "__main__":
-    main()
+    #main()
     #plot_from_file("ppo")
     #plot_from_file("dqn")
-    #plot_from_file("rainbow")
+    plot_from_file("rainbow")

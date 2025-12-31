@@ -142,7 +142,7 @@ def train_rainbowDQN(
                 state = next_state
                 ep_reward += reward
                 global_step += 1
-
+            
             stats["episode_rewards"].append(ep_reward)
             print(
                 f"Episode {ep+1}/{num_episodes} | "

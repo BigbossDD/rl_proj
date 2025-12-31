@@ -1,68 +1,56 @@
+# PERbuffer.py (sample fixed with retry loop and size check)
 import numpy as np
 import random
 from helper_classes.Rainbow_DQN_helper_classes.SumTree import SumTree
 import torch
 
-
 class PERBuffer:
     def __init__(self, capacity, alpha=0.6):
-        """
-        Prioritized Experience Replay Buffer.
-
-        Args:
-            capacity (int): max number of transitions to store
-            alpha (float): prioritization exponent (0 = uniform, 1 = fully prioritized)
-        """
         self.tree = SumTree(capacity)
         self.capacity = capacity
         self.alpha = alpha
         self.epsilon = 1e-6  # small amount to avoid zero priority
 
     def add(self, state, action, reward, next_state, done):
-        """
-        Add a new experience to the buffer with max priority.
-
-        Args:
-            state (np.array)
-            action (int)
-            reward (float)
-            next_state (np.array)
-            done (bool)
-        """
         max_priority = np.max(self.tree.tree[-self.capacity:])
         if max_priority == 0:
             max_priority = 1.0
-
         data = (state, action, reward, next_state, done)
         self.tree.add(max_priority, data)
 
     def sample(self, batch_size, beta=0.4):
-        """
-        Sample a batch of experiences, weighted by priority.
+        # Reject sampling if buffer not full enough
+        if self.tree.size < batch_size:
+            return None  # Not enough data yet
 
-        Args:
-            batch_size (int)
-            beta (float): importance-sampling exponent (0=no correction, 1=full correction)
-
-        Returns:
-            states, actions, rewards, next_states, dones, indices, weights
-            where:
-                states, next_states are torch.FloatTensors (B, *state_shape)
-                actions, rewards, dones are torch tensors
-                indices are tree indices for priority update
-                weights are importance-sampling weights
-        """
         batch = []
         idxs = []
-        segment = self.tree.total_priority / batch_size
         priorities = []
+        segment = self.tree.total_priority / batch_size
 
         for i in range(batch_size):
             a = segment * i
             b = segment * (i + 1)
-
             s = random.uniform(a, b)
-            idx, priority, data = self.tree.get(s)
+
+            # Try-except in case data is None, retry sampling s
+            for _ in range(5):  # try max 5 times per sample
+                try:
+                    idx, priority, data = self.tree.get(s)
+                    if data is None:
+                        raise RuntimeError("Got None data")
+                    break
+                except RuntimeError:
+                    s = random.uniform(a, b)
+            else:
+                # Failed to get valid data after 5 tries, fallback to random data from buffer
+                # Choose random idx from valid range
+                valid_idx = random.randint(0, self.tree.size - 1)
+                idx = valid_idx + self.capacity - 1
+                priority = self.tree.tree[idx]
+                data = self.tree.data[valid_idx]
+                if data is None:
+                    return None  # give up on this batch, caller should handle None
 
             batch.append(data)
             idxs.append(idx)
@@ -91,13 +79,6 @@ class PERBuffer:
         return states, actions, rewards, next_states, dones, idxs, weights
 
     def update_priorities(self, idxs, errors):
-        """
-        Update priorities on the tree for sampled indices.
-
-        Args:
-            idxs (list): indices in the sum tree to update
-            errors (torch.Tensor or np.array): TD errors or loss for those indices
-        """
         errors = errors.detach().cpu().numpy()
         for idx, error in zip(idxs, errors):
             priority = (np.abs(error) + self.epsilon) ** self.alpha
