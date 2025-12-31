@@ -115,18 +115,49 @@ def plot(stats, window=50):
     plt.show()
 
 
+def plot_from_file(agent_name, window=1000):
+    file_path = f"{agent_name}_episode_rewards.npy"
+    rewards = np.load(file_path)
+
+    episodes = np.arange(len(rewards))
+    rolling_mean = np.array([
+        rewards[max(0, i - window): i + 1].mean()
+        for i in range(len(rewards))
+    ])
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(episodes, rewards, alpha=0.3, label="Episode Reward")
+    plt.plot(episodes, rolling_mean, linewidth=2,
+             label=f"Rolling Mean ({window})")
+
+    plt.axhline(
+        y=rolling_mean[-1],
+        linestyle="--",
+        label="Final Avg"
+    )
+
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.title(f"{agent_name.upper()} Training Convergence")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+
+    plt.savefig(f"{agent_name}_convergence.png", dpi=200)
+    plt.show()
+
 def main():
     parser = argparse.ArgumentParser(description="Train RL agents on Atari")
 
     parser.add_argument(
         "--mode",
         type=str,
-        default="resume",
+        default="deploy",
         choices=["train", "resume", "deploy"],
         help="train: start new, resume: continue training, deploy: run trained agent"
     )
 
-    parser.add_argument("--agent", type=str, default="DQN",
+    parser.add_argument("--agent", type=str, default="DQN", # to change the agent that is being trained, in launch.json change the arg --agent to either DQN, PPO or RAINBOW
                         choices=["DQN", "PPO", "RAINBOW"])
     parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
     parser.add_argument("--device", type=str, default="cuda")
@@ -134,14 +165,14 @@ def main():
     # change the default values below to set hyperparameters for each agent 
     #as presented in the comments
     
-    parser.add_argument("--num_episodes", type=int, default=10000)#for DQN --> 10000  /// Rainbow DQN -->  /// PPO -->
-    parser.add_argument("--replay_size", type=int, default=100_000)#for DQN --> 100_000  /// Rainbow DQN -->  /// PPO -->
-    parser.add_argument("--batch_size", type=int, default=32)#for DQN --> 32  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--num_episodes", type=int, default=3000)#for DQN --> 10000  /// Rainbow DQN -->  /// PPO -->3000
+    parser.add_argument("--replay_size", type=int, default=100_000)#for DQN --> 100_000  /// Rainbow DQN -->  
+    parser.add_argument("--batch_size", type=int, default=32)#for DQN --> 32  /// Rainbow DQN -->  
     parser.add_argument("--start_learning", type=int, default=2_000)#for DQN --> 2000
-    parser.add_argument("--train_freq", type=int, default=4)#for DQN --> 4  /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--train_freq", type=int, default=4)#for DQN --> 4  /// Rainbow DQN -->  
     parser.add_argument("--target_update_freq", type=int, default=500)#for DQN --> 500 
-    parser.add_argument("--gamma", type=float, default=0.99)#for DQN -->  0.99 /// Rainbow DQN -->  /// PPO -->
-    parser.add_argument("--lr", type=float, default=2.5e-4 )#for DQN --> 2.5e-4   /// Rainbow DQN -->  /// PPO -->
+    parser.add_argument("--gamma", type=float, default=0.99)#for DQN -->  0.99 /// Rainbow DQN -->  /// PPO -->99
+    parser.add_argument("--lr", type=float, default=2.5e-4 )#for DQN --> 2.5e-4   /// Rainbow DQN -->  /// PPO -->2.5e-4
     #------------------------
     # PPO-specific optional args
     parser.add_argument("--rollout_length", type=int, default=2048)
@@ -175,3 +206,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #plot_from_file("ppo")
+    #plot_from_file("dqn")
+    #plot_from_file("rainbow")

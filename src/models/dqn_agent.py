@@ -78,7 +78,7 @@ class DQN_Agent:
         self.epsilon_decay_steps = 1_000_000  # Atari standard
         self.total_steps = 0
         self.epsilon_min = 0.01
-
+        
         self.step_count = 0
 
     ########################################
@@ -101,12 +101,16 @@ class DQN_Agent:
 
         batch = self.replay_buffer.sample(self.batch_size)
 
-        states = torch.tensor(batch["states"], device=self.device)
-        actions = torch.tensor(batch["actions"], device=self.device).unsqueeze(1)
-        rewards = torch.tensor(batch["rewards"], device=self.device)
-        next_states = torch.tensor(batch["next_states"], device=self.device)
-        dones = torch.tensor(batch["dones"], device=self.device)
-
+        #states = torch.as_tensor(batch["states"], device=self.device)
+        #actions = torch.as_tensor(batch["actions"], device=self.device).unsqueeze(1)
+        #rewards = torch.as_tensor(batch["rewards"], device=self.device)
+        #next_states = torch.as_tensor(batch["next_states"], device=self.device)
+        #dones = torch.as_tensor(batch["dones"], device=self.device)
+        states = torch.from_numpy(batch["states"]).to(self.device).float()
+        next_states = torch.from_numpy(batch["next_states"]).to(self.device).float()
+        actions = torch.from_numpy(batch["actions"]).to(self.device).long().unsqueeze(1)
+        rewards = torch.from_numpy(batch["rewards"]).to(self.device).float()
+        dones = torch.from_numpy(batch["dones"]).to(self.device).float()
         # Q(s, a)
         q_values = self.policy_net(states).gather(1, actions).squeeze(1)
 
