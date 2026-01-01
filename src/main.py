@@ -115,8 +115,11 @@ def plot(stats, window=50):
     plt.show()
 
 
-def plot_from_file(agent_name, window=1000):
-    file_path = f"{agent_name}_episode_rewards.npy"
+def plot_from_file(agent_name, window=10000):
+    if agent_name == "rainbow":
+        file_path = "rainbow_rewards.npy"
+    else:
+        file_path = f"{agent_name}_episode_rewards.npy"
     rewards = np.load(file_path)
 
     episodes = np.arange(len(rewards))
@@ -126,8 +129,8 @@ def plot_from_file(agent_name, window=1000):
     ])
 
     plt.figure(figsize=(12, 6))
-    plt.plot(episodes, rewards, alpha=0.3, label="Episode Reward")
-    plt.plot(episodes, rolling_mean, linewidth=2,
+   # plt.plot( rewards, alpha=0.3, label="Episode Reward")#rewards 
+    plt.plot( rolling_mean, linewidth=2,
              label=f"Rolling Mean ({window})")
 
     plt.axhline(
@@ -207,5 +210,5 @@ def main():
 if __name__ == "__main__":
     #main()
     #plot_from_file("ppo")
-    #plot_from_file("dqn")
-    plot_from_file("rainbow")
+    plot_from_file("dqn")
+    #plot_from_file("rainbow")
