@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+'''
+this code has the PPO agent network
+
+'''
 
 class PPO_PolicyNet(nn.Module):
     def __init__(self, input_shape, num_actions):

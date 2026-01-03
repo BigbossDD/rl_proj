@@ -1,5 +1,8 @@
 # SumTree.py (fixed)
 import numpy as np
+'''
+this class is SumTree for Prioritized Experience Replay
+'''
 
 class SumTree:
     def __init__(self, capacity):
@@ -8,7 +11,7 @@ class SumTree:
         self.data = np.empty(capacity, dtype=object)
         self.write = 0
         self.size = 0
-
+    # Add a new priority and data point to the tree
     def add(self, priority, data):
         priority = max(priority, 1e-6)
         idx = self.write + self.capacity - 1
@@ -16,7 +19,7 @@ class SumTree:
         self.update(idx, priority)
         self.write = (self.write + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
-
+    # Update the priority of a given tree index
     def update(self, idx, priority):
         priority = max(priority, 1e-6)
         change = priority - self.tree[idx]
@@ -24,7 +27,7 @@ class SumTree:
         while idx != 0:
             idx = (idx - 1) // 2
             self.tree[idx] += change
-
+    # Get the index, priority, and data for a given cumulative priority s
     def get(self, s):
         s = np.clip(s, 0, self.total_priority)
         idx = 0
@@ -53,7 +56,7 @@ class SumTree:
             )
 
         return idx, self.tree[idx], data
-
+    # Property to get the total priority
     @property
     def total_priority(self):
         return max(self.tree[0], 1e-6)

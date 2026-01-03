@@ -1,12 +1,12 @@
 import numpy as np
-
-class RunningMeanStd:
-    """
+"""
     Tracks running mean & variance using Welford's algorithm.
-    Commonly used for:
+    used for:
       - state normalization
       - reward normalization
     """
+class RunningMeanStd:
+    
 
     def __init__(self, shape, epsilon=1e-4):
         """

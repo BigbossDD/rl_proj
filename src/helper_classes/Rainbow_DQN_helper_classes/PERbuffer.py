@@ -3,6 +3,11 @@ import numpy as np
 import random
 from helper_classes.Rainbow_DQN_helper_classes.SumTree import SumTree
 import torch
+'''
+Prioritized Experience Replay Buffer
+This class implements a Prioritized 
+Experience Replay (PER) buffer using a SumTree data structure.'''
+
 
 class PERBuffer:
     def __init__(self, capacity, alpha=0.6):
@@ -10,14 +15,14 @@ class PERBuffer:
         self.capacity = capacity
         self.alpha = alpha
         self.epsilon = 1e-6  # small amount to avoid zero priority
-
+    # Add a new experience to the buffer
     def add(self, state, action, reward, next_state, done):
         max_priority = np.max(self.tree.tree[-self.capacity:])
         if max_priority == 0:
             max_priority = 1.0
         data = (state, action, reward, next_state, done)
         self.tree.add(max_priority, data)
-
+    # Sample a batch of experiences from the buffer
     def sample(self, batch_size, beta=0.4):
         # Reject sampling if buffer not full enough
         if self.tree.size < batch_size:
@@ -77,12 +82,12 @@ class PERBuffer:
         weights = torch.FloatTensor(weights)
 
         return states, actions, rewards, next_states, dones, idxs, weights
-
+    # Update priorities of sampled experiences
     def update_priorities(self, idxs, errors):
         errors = errors.detach().cpu().numpy()
         for idx, error in zip(idxs, errors):
             priority = (np.abs(error) + self.epsilon) ** self.alpha
             self.tree.update(idx, priority)
-
+    # Get the current size of the buffer
     def __len__(self):
         return self.tree.size

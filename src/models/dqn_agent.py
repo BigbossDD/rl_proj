@@ -3,7 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import random
-
+'''
+this is the DQN agent that has the Network in it , and it is  connected to the training 
+script(train_dqn.py)
+'''
 
 ############################################
 # DQN NETWORK (Atari-style CNN)
@@ -101,11 +104,7 @@ class DQN_Agent:
 
         batch = self.replay_buffer.sample(self.batch_size)
 
-        #states = torch.as_tensor(batch["states"], device=self.device)
-        #actions = torch.as_tensor(batch["actions"], device=self.device).unsqueeze(1)
-        #rewards = torch.as_tensor(batch["rewards"], device=self.device)
-        #next_states = torch.as_tensor(batch["next_states"], device=self.device)
-        #dones = torch.as_tensor(batch["dones"], device=self.device)
+       
         states = torch.from_numpy(batch["states"]).to(self.device).float()
         next_states = torch.from_numpy(batch["next_states"]).to(self.device).float()
         actions = torch.from_numpy(batch["actions"]).to(self.device).long().unsqueeze(1)
@@ -147,6 +146,7 @@ class DQN_Agent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
     ########################################
+    # this section used for savin of the model weights 
     def save_model(self, filepath):
         torch.save(self.policy_net.state_dict(), filepath)
 

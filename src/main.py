@@ -7,9 +7,13 @@ from train.train_ppo import train_PPO
 from train.train_dqn import train_dqn
 import matplotlib.pyplot as plt
 
-#to change the agent that is being trained, in launch.json change the arg --agent to either DQN, PPO or RAINBOW
+#IMPORTANT NOTE:
+#to change the agent that is being trained, 
+# in launch.json change the arg --agent to either DQN, PPO or RAINBOW
 
-
+# this function calls the appropriate training function based on the selected agent type
+# it passes the relevant hyperparameters from args to the training function and 
+# returns the training statistics for plotting
 def call_train(agent_type, args):
     '''
     Call the training function for the selected agent
@@ -66,7 +70,8 @@ def call_train(agent_type, args):
 
     return stats
 
-
+# this function plots the training performance using raw rewards and rolling averages
+#it will plot after training is done or interrupted
 def plot(stats, window=50):
     rewards = stats["episode_rewards"]
     episodes = range(len(rewards))
@@ -114,8 +119,8 @@ def plot(stats, window=50):
     plt.tight_layout()
     plt.show()
 
-
-def plot_from_file(agent_name, window=10000):
+#this function loads rewards from a file and plots them
+def plot_from_file(agent_name, window=1000):
     if agent_name == "rainbow":
         file_path = "rainbow_rewards.npy"
     else:
@@ -149,6 +154,9 @@ def plot_from_file(agent_name, window=10000):
     plt.savefig(f"{agent_name}_convergence.png", dpi=200)
     plt.show()
 
+
+#main function to prepare the parameters and initiate training or deployment
+#and it is a connection point between plotting and training functions
 def main():
     parser = argparse.ArgumentParser(description="Train RL agents on Atari")
 
@@ -162,20 +170,20 @@ def main():
 
     parser.add_argument("--agent", type=str, default="DQN", # to change the agent that is being trained, in launch.json change the arg --agent to either DQN, PPO or RAINBOW
                         choices=["DQN", "PPO", "RAINBOW"])
-    parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")
+    parser.add_argument("--env_id", type=str, default="ALE/BattleZone-v5")# this not to be changed
     parser.add_argument("--device", type=str, default="cuda")
     #------------------------
     # change the default values below to set hyperparameters for each agent 
     #as presented in the comments
     
-    parser.add_argument("--num_episodes", type=int, default=3000)#for DQN --> 10000  /// Rainbow DQN -->  /// PPO -->3000
-    parser.add_argument("--replay_size", type=int, default=100_000)#for DQN --> 100_000  /// Rainbow DQN -->  
-    parser.add_argument("--batch_size", type=int, default=32)#for DQN --> 32  /// Rainbow DQN -->  
+    parser.add_argument("--num_episodes", type=int, default=3000)#for DQN --> 10000  /// Rainbow DQN -->3000  /// PPO -->3000
+    parser.add_argument("--replay_size", type=int, default=100_000)#for DQN --> 100_000  /// Rainbow DQN --> 100_000 
+    parser.add_argument("--batch_size", type=int, default=32)#for DQN --> 32  /// Rainbow DQN --> 32
     parser.add_argument("--start_learning", type=int, default=2_000)#for DQN --> 2000
-    parser.add_argument("--train_freq", type=int, default=4)#for DQN --> 4  /// Rainbow DQN -->  
+    parser.add_argument("--train_freq", type=int, default=4)#for DQN --> 4  /// Rainbow DQN --> 4
     parser.add_argument("--target_update_freq", type=int, default=500)#for DQN --> 500 
-    parser.add_argument("--gamma", type=float, default=0.99)#for DQN -->  0.99 /// Rainbow DQN -->  /// PPO -->99
-    parser.add_argument("--lr", type=float, default=2.5e-4 )#for DQN --> 2.5e-4   /// Rainbow DQN -->  /// PPO -->2.5e-4
+    parser.add_argument("--gamma", type=float, default=0.99)#for DQN -->  0.99 /// Rainbow DQN --> 0.99 /// PPO -->0.99
+    parser.add_argument("--lr", type=float, default=2.5e-4 )#for DQN --> 2.5e-4   /// Rainbow DQN --> 2.5e-4 /// PPO -->2.5e-4
     #------------------------
     # PPO-specific optional args
     parser.add_argument("--rollout_length", type=int, default=2048)
@@ -187,13 +195,15 @@ def main():
     args = parser.parse_args()
 
     # Create results directory early
+    # the weights and training history will be saved here , and it will overwrite 
+    # any existing files with the same name
     RESULT_DIR = "results"
     os.makedirs(RESULT_DIR, exist_ok=True)
     WEIGHT_FILE = os.path.join(RESULT_DIR, f"{args.agent.lower()}_weights.pth")
     HISTORY_FILE = os.path.join(RESULT_DIR, f"{args.agent.lower()}_history.npy")
 
     stats = None
-
+    # decide action based on mode if train, resume or deploy
     if args.mode in ["train", "resume"]:
         print(f"Starting {args.mode} for agent: {args.agent}")
         stats = call_train(args.agent, args)
@@ -201,14 +211,23 @@ def main():
         if stats is not None:
             print("Plotting training curves...")
             plot(stats)
-
+    # if deploy, just run the agent visually
     elif args.mode == "deploy":
         print(f"Deploying agent: {args.agent}")
         # call_train with mode=deploy will handle loading weights and running agent visually
         call_train(args.agent, args)
 
+
+
+
+
 if __name__ == "__main__":
-    #main()
+    #this part is where i move into diffrent parts of the code 
+    # --> to train the agent // now to change the agent that is being trained, 
+    # in launch.json change the arg --agent to either DQN, PPO or RAINBOW
+    main() 
+    #---------------------------------
+    # to plot from  saved rewards -->
     #plot_from_file("ppo")
-    plot_from_file("dqn")
+    #plot_from_file("dqn")
     #plot_from_file("rainbow")

@@ -2,19 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-
-
-class NoisyLinear(nn.Module):
-    """
+"""
     Noisy Linear Layer (Factorized Gaussian Noise)
-    SAFE implementation for Rainbow DQN.
-
-    IMPORTANT DESIGN RULE:
-    ----------------------
+    
+    IMPORTANT(after multiple fixes and iterations):
     - Noise is NOT reset inside forward()
     - Noise is reset EXTERNALLY by the agent
     - No in-place modification during forward pass
-    """
+"""
+
+class NoisyLinear(nn.Module):
+   
 
     def __init__(self, in_features, out_features, std_init=0.5):
         super(NoisyLinear, self).__init__()
@@ -32,26 +30,22 @@ class NoisyLinear(nn.Module):
         self.bias_mu = nn.Parameter(torch.empty(out_features))
         self.bias_sigma = nn.Parameter(torch.empty(out_features))
 
-        # ------------------------------------------------------------
-        # FIX 1:
-        # Noise buffers are registered ONCE and NEVER modified in forward()
-        # ------------------------------------------------------------
+        
         self.register_buffer("weight_epsilon", torch.empty(out_features, in_features))
         self.register_buffer("bias_epsilon", torch.empty(out_features))
 
         self.reset_parameters()
         self.reset_noise()  # initial noise
 
-
+    
+    
     def reset_parameters(self):
         """
         Initialize learnable parameters.
         """
         mu_range = 1 / math.sqrt(self.in_features)
 
-        # ------------------------------------------------------------
-        # OK: .data usage here is safe (before training)
-        # ------------------------------------------------------------
+      
         self.weight_mu.data.uniform_(-mu_range, mu_range)
         self.bias_mu.data.uniform_(-mu_range, mu_range)
 
@@ -65,10 +59,7 @@ class NoisyLinear(nn.Module):
         """
         x = torch.randn(size, device=self.weight_mu.device)
 
-        # ------------------------------------------------------------
-        # FIX 2:
-        # No in-place ops on reused tensors (autograd-safe)
-        # ------------------------------------------------------------
+    
         return x.sign() * torch.sqrt(torch.abs(x))
 
 
@@ -85,10 +76,7 @@ class NoisyLinear(nn.Module):
         epsilon_in = self._scale_noise(self.in_features)
         epsilon_out = self._scale_noise(self.out_features)
 
-        # ------------------------------------------------------------
-        # FIX 4:
-        # Safe buffer update (NOT during forward)
-        # ------------------------------------------------------------
+     
         self.weight_epsilon.copy_(torch.outer(epsilon_out, epsilon_in))
         self.bias_epsilon.copy_(epsilon_out)
 
@@ -97,13 +85,10 @@ class NoisyLinear(nn.Module):
         """
         Forward pass.
         
-        FIX 5 (CRITICAL):
-        ----------------
-        - NO noise sampling here
-        - NO buffer mutation here
         """
 
         if self.training:
+            
             weight = self.weight_mu + self.weight_sigma * self.weight_epsilon
             bias = self.bias_mu + self.bias_sigma * self.bias_epsilon
         else:

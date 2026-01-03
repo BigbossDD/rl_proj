@@ -148,7 +148,6 @@ class RainbowDQNAgent:
         self.optimizer.step()
 
         # ---- PER priority update ----
-        # FIX: Send raw tensor errors, PERBuffer will detach and convert internally
         self.replay_buffer.update_priorities(idxs, td_error)
 
         return loss.item()

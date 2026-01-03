@@ -1,7 +1,10 @@
 import random
 import numpy as np
 from collections import deque
-
+'''
+A simple Replay Buffer implementation for storing and sampling experiences.
+used mostly in DQN  
+'''
 
 class ReplayBuffer:
     def __init__(self, capacity, state_shape, device="cpu"):

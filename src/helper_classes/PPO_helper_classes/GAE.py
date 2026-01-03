@@ -1,10 +1,10 @@
 import numpy as np
-
+"""
+    Computes Generalized Advantage Estimation (GAE) for PPO.
+"""
 
 class GAE:
-    """
-    Computes Generalized Advantage Estimation (GAE) for PPO.
-    """
+    
 
     @staticmethod
     def compute(values, rewards, dones, last_value, gamma, lam):

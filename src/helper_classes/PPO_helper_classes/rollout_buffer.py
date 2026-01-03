@@ -2,16 +2,16 @@ import numpy as np
 import torch
 from helper_classes.PPO_helper_classes.GAE import GAE
 from helper_classes.PPO_helper_classes.MiniBatch_generator import minibatch_generator
-
-
-class RolloutBuffer:
-    """
+"""
     Stores a full rollout (trajectory) of experience for PPO.
 
     After rollout is collected, compute:
       - advantages (using GAE)
       - returns (discounted rewards)
     """
+
+class RolloutBuffer:
+    
 
     def __init__(self, buffer_size, state_shape, device="cpu"):
         """

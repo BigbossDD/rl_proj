@@ -1,6 +1,6 @@
 import numpy as np
 
-
+  
 def minibatch_generator(batch_size, mini_batch_size, *arrays):
     """
     Yields shuffled minibatches.

@@ -6,6 +6,14 @@ import os
 from collections import deque, defaultdict
 from models.rainbowDQN_agent import RainbowDQNAgent
 
+'''
+this is  the training script for Rainbow DQN , it is the agent direct link with main and the envoirment 
+also here is where the weights are saved 
+'''
+
+
+
+
 # ======================================================
 # Frame preprocessing
 # ======================================================
